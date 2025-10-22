@@ -1,0 +1,23 @@
+.container-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: var(--white-color);
+}
+
+.main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .container-panel {
+        flex-direction: column;
+    }
+
+    .main {
+        flex-direction: column;
+        overflow: visible;
+    }
+}

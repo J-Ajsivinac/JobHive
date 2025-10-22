@@ -1,0 +1,134 @@
+@import '../../Utils/Colors.css';
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+h1 {
+    font-size: 2.2rem;
+    line-height: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    color: var(--text-color);
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 400px;
+    padding: 1rem;
+    border-radius: 5px;
+}
+
+.form-group1 {
+    position: relative;
+    margin-bottom: 3rem;
+}
+
+label {
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    transition: 0.2s ease all;
+    background-color: var(--white-color);
+    padding: 0 5px;
+    color: var(--inputs-color);
+    font-size: 1rem;
+    pointer-events: none;
+}
+
+input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--inputs-color);
+    border-radius: 5px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--inputs-color);
+}
+
+input:focus + label,
+input:not(:placeholder-shown) + label {
+    top: -10px;
+    left: -5px;
+    font-size: 0.8rem;
+    color: var(--inputs-color);
+    background-color: var(--white-color);
+}
+
+button {
+    padding: 0.75rem;
+    background-color: var(--light-blue);
+    color: var(--white-color);
+    border: none;
+    border-radius: 5px;
+    font-family: var(--font-family);
+    font-size: 1.3rem;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: var(--dark-blue);
+}
+
+.login-signup {
+    color: var(--inputs-color);
+}
+
+.navigate {
+    color: var(--inputs-color);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.8rem;
+        margin-bottom: 1.5rem;
+    }
+
+    form {
+        max-width: 90%;
+        padding: 0.5rem;
+    }
+
+    button {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    form {
+        max-width: 90%;
+        padding: 0.5rem;
+    }
+
+    button {
+        font-size: 1rem;
+        padding: 0.5rem;
+    }
+
+    input {
+        padding: 0.6rem;
+        font-size: 0.9rem;
+    }
+    
+    label {
+        font-size: 0.9rem;
+    }
+}

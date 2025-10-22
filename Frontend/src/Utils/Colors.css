@@ -1,0 +1,21 @@
+:root {
+    --font-family:: "Inter", sans-serif;
+    --light-blue: #0985F7;
+    --dark-blue: #157AD7;
+    --white-color: #FFFFFF;
+    --text-color: #0D1116;
+    --text-color2: #262d33;
+    --inputs-color: #939393;
+    --search-color: #ECF1F4;
+    --menu-color: #EFF7F7;
+    --menu-color2: #dfecec;
+    --logout-color: #F77;
+    --hover-color: #F5F7F7;
+    --hover-color2: #E8ECED;
+
+    /* Cards */
+    --bg-color-primary: #ffe4d4;
+    --bg-color-secondary: #c5f0dc;
+    --bg-color-tertiary: #ded7f0;
+    --bg-color-quaternary: #c6e8f0;
+}
