@@ -1,16 +1,23 @@
 const express = require('express');
 const router = express.Router();
 const AWS = require('aws-sdk');
-const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const pdf = require('pdf-parse');
 const translateText = require('../utils/translate.text');
 const imageProccesor = require('../utils/analyzer.txt');
 const textToSpeech = require('../utils/analyzer.audio');
-const jwksClient = require('jwks-rsa');
 
 const db = require('../utils/db');
+const authenticateJWT = require('../utils/authJWT');
 
 require('dotenv').config();
+
+// Función para calcular el SECRET_HASH requerido por Cognito cuando hay Client Secret
+function calculateSecretHash(username, clientId, clientSecret) {
+    return crypto.createHmac('SHA256', clientSecret)
+        .update(username + clientId)
+        .digest('base64');
+}
 
 AWS.config.update({ region: process.env.AWS_REGION });
 const cognito = new AWS.CognitoIdentityServiceProvider();
@@ -18,40 +25,6 @@ const s3 = new AWS.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
-
-const client = jwksClient({
-    jwksUri: `https://cognito-idp.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_USER_POOL_ID}/.well-known/jwks.json`,
-});
-
-function getKey(header, callback) {
-    client.getSigningKey(header.kid, (err, key) => {
-        const signingKey = key.publicKey || key.rsaPublicKey;
-        callback(null, signingKey);
-    });
-}
-
-const authenticateJWT = (req, res, next) => {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader) {
-        return res.status(401).json({ err: 'Authorization header not found' });
-    }
-
-    const token = authHeader.split(' ')[1];
-
-    if (token) {
-        jwt.verify(token, getKey, {}, (err, user) => {
-            if (err) {
-                return res.status(403).json({ err: 'Invalid token' });
-            }
-
-            req.user = user;
-            next();
-        });
-    } else {
-        res.status(401).json({ err: 'Token not found' });
-    }
-};
 
 router.post('/signup', async (req, res) => {
     const { first_name, last_name, email, birth_date, password, picture } = req.body;
@@ -65,6 +38,7 @@ router.post('/signup', async (req, res) => {
             ClientId: process.env.AWS_CLIENT_ID,
             Password: password,
             Username: email,
+            SecretHash: calculateSecretHash(email, process.env.AWS_CLIENT_ID, process.env.AWS_CLIENT_SECRET),
         };
 
         const data = await cognito.signUp(params).promise();
@@ -96,6 +70,7 @@ router.post('/confirm', (req, res) => {
         ClientId: process.env.AWS_CLIENT_ID,
         ConfirmationCode: code,
         Username: email,
+        SecretHash: calculateSecretHash(email, process.env.AWS_CLIENT_ID, process.env.AWS_CLIENT_SECRET),
     };
 
     cognito.confirmSignUp(params, (err, data) => {
@@ -120,6 +95,7 @@ router.post('/signin', async (req, res) => {
         AuthParameters: {
             USERNAME: email,
             PASSWORD: password,
+            SECRET_HASH: calculateSecretHash(email, process.env.AWS_CLIENT_ID, process.env.AWS_CLIENT_SECRET),
         },
     };
 
@@ -132,6 +108,7 @@ router.post('/signin', async (req, res) => {
             throw new Error('User not found in database');
         }
         const user = {
+            id: row[0].ID,
             first_name: row[0].NOMBRE,
             last_name: row[0].APELLIDO,
             email: row[0].CORREO,
@@ -168,24 +145,88 @@ router.post('/signout', authenticateJWT, (req, res) => {
 });
 
 router.post('/upload-cv', authenticateJWT, async (req, res) => {
-    const { email, cv } = req.body;
-
-    const cvBuffer = Buffer.from(cv.replace(/^data:application\/\w+;base64,/, ''), 'base64');
-    const params = {
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: `cv/${email}-${Date.now()}.pdf`,
-        Body: cvBuffer,
-        ContentType: 'application/pdf',
-    };
+    const { cv } = req.body;
+    const email = req.user.email; // Obtenemos el email del token JWT
 
     try {
-        const data = await s3.upload(params).promise();
-        const cvUrl = data.Location;
-
-        const query = 'UPDATE USUARIO SET CV = ? WHERE CORREO = ?';
-        await db.query(query, [cvUrl, email]);
-
-        res.json(data);
+        // Detectar el tipo de archivo (imagen o PDF)
+        const isImage = cv.startsWith('data:image/');
+        const isPDF = cv.startsWith('data:application/pdf');
+        
+        let cvBuffer, contentType, extension;
+        
+        if (isImage) {
+            // Es una imagen - extraer texto con Rekognition
+            cvBuffer = Buffer.from(cv.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+            
+            // Determinar extensión de imagen
+            if (cv.startsWith('data:image/png')) {
+                contentType = 'image/png';
+                extension = 'png';
+            } else if (cv.startsWith('data:image/jpeg') || cv.startsWith('data:image/jpg')) {
+                contentType = 'image/jpeg';
+                extension = 'jpg';
+            } else {
+                contentType = 'image/jpeg';
+                extension = 'jpg';
+            }
+            
+            // Extraer texto con Rekognition
+            const extractedText = await imageProccesor.extractText(cvBuffer);
+            
+            // Subir imagen a S3
+            const params = {
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Key: `cvs/${email}-${Date.now()}.${extension}`,
+                Body: cvBuffer,
+                ContentType: contentType,
+            };
+            
+            const data = await s3.upload(params).promise();
+            const cvUrl = data.Location;
+            
+            // Actualizar base de datos
+            const query = 'UPDATE USUARIO SET CV = ? WHERE CORREO = ?';
+            await db.query(query, [cvUrl, email]);
+            
+            res.json({ 
+                message: 'CV uploaded and processed successfully',
+                cvUrl: cvUrl,
+                extractedText: extractedText,
+                ...data 
+            });
+            
+        } else if (isPDF) {
+            // Es un PDF - subir directamente
+            cvBuffer = Buffer.from(cv.replace(/^data:application\/\w+;base64,/, ''), 'base64');
+            contentType = 'application/pdf';
+            extension = 'pdf';
+            
+            const params = {
+                Bucket: process.env.AWS_BUCKET_NAME,
+                Key: `cvs/${email}-${Date.now()}.${extension}`,
+                Body: cvBuffer,
+                ContentType: contentType,
+            };
+            
+            const data = await s3.upload(params).promise();
+            const cvUrl = data.Location;
+            
+            // Actualizar base de datos
+            const query = 'UPDATE USUARIO SET CV = ? WHERE CORREO = ?';
+            await db.query(query, [cvUrl, email]);
+            
+            res.json({ 
+                message: 'CV uploaded successfully',
+                cvUrl: cvUrl,
+                note: 'PDF text extraction requires AWS Textract (not implemented)',
+                ...data 
+            });
+            
+        } else {
+            return res.status(400).json({ err: 'Invalid file format. Please send image (PNG/JPG) or PDF with base64 data URI' });
+        }
+        
     } catch (err) {
         console.log(err);
         res.status(400).json({ err: err.message });
