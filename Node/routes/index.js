@@ -1,24 +1,25 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
-router.get('/', (req, res) => {
-    res.json({ 
-        message: 'HireVision API - AWS Cloud Innovation',
-        version: '1.0.0',
-        project: 'Seminario de Sistemas 1 - Proyecto Final',
-        status: 'running',
+router.get("/", (_, res) => {
+    res.json({
+        message: "HireVision API - AWS Cloud Innovation",
+        version: "1.0.0",
+        project: "Seminario de Sistemas 1 - Proyecto Final",
+        status: "running",
         endpoints: {
-            users: '/users',
-            jobs: '/jobs'
-        }
+            users: "/users",
+            jobs: "/jobs",
+            polly: "/polly",
+        },
     });
 });
 
-router.get('/health', (req, res) => {
-    res.json({ 
-        status: 'healthy',
+router.get("/health", (_, res) => {
+    res.json({
+        status: "healthy",
         timestamp: new Date().toISOString(),
-        uptime: process.uptime()
+        uptime: process.uptime(),
     });
 });
 
