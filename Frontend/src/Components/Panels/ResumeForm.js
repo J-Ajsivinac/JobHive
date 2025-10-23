@@ -17,16 +17,41 @@ const ResumeForm = ({ job }) => {
         // Lógica para traducir la descripción a otro idioma
         console.log("Traducir a:", selectedLanguage);
 
-
         if (selectedLanguage === 'es') {
-            setTranslatedTitle('Título del Puesto en Español');
-        } else if (selectedLanguage === 'en') {
-            setTranslatedTitle('Job Title in English');
-        } else if (selectedLanguage === 'fr') {
-            setTranslatedTitle('Titre du poste en français');
-        } else if (selectedLanguage === 'de') {
-            setTranslatedTitle('Stellentitel auf Deutsch');
+            setTranslatedTitle(job.description);
+        } else {
+            fetch(process.env.REACT_APP_TRANSLATE_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    texto: job.description,
+                    source_language: "es",
+                    target_language: selectedLanguage
+                }),
+            })
+                .then(async (response) => {
+                    if (!response.ok) {
+                        const text = await response.text();
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${text}`);
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    if (data.texto_traducido) {
+                        setTranslatedTitle(data.texto_traducido);
+                    } else {
+                        console.error('No se encontró texto_traducido en la respuesta:', data);
+                        setTranslatedTitle('Error: No se pudo traducir');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error al traducir:', error);
+                    setTranslatedTitle('Error al traducir');
+                });
         }
+
     };
 
     return (
@@ -55,16 +80,16 @@ const ResumeForm = ({ job }) => {
 
             <div className="form-group1">
                 <p><strong>Descripción del puesto:</strong></p>
-                <ReactQuill 
-                    value={job.description} 
-                    readOnly={true} 
-                    theme="bubble" 
+                <ReactQuill
+                    value={job.description}
+                    readOnly={true}
+                    theme="bubble"
                     style={{ maxHeight: '200px', overflowY: 'auto' }} // Limita el tamaño del editor con barra de desplazamiento
                 />
                 <div style={{ marginTop: '10px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <span style={{ marginRight: '10px' }}>Escuchar</span>
-                    <button 
-                        onClick={handlePlayClick} 
+                    <button
+                        onClick={handlePlayClick}
                         style={{
                             backgroundColor: '#4CAF50',
                             color: 'white',
@@ -98,10 +123,10 @@ const ResumeForm = ({ job }) => {
             {/* Título traducido del puesto */}
             <div className="form-group1" style={{ marginTop: '20px' }}>
                 <p><strong>Título del Puesto Traducido:</strong></p>
-                <ReactQuill 
-                    value={translatedTitle} 
-                    readOnly={true} 
-                    theme="bubble" 
+                <ReactQuill
+                    value={translatedTitle}
+                    readOnly={true}
+                    theme="bubble"
                     style={{ maxHeight: '100px', overflowY: 'auto' }} // Limita el tamaño del editor con barra de desplazamiento
                 />
             </div>

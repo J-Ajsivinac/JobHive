@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../utils/db');
+const authenticateJWT = require('../utils/authJWT');
 require('dotenv').config();
 
-router.get('/jobs', async (req, res) => {
+router.get('/', authenticateJWT, async (req, res) => {
     const query = `
         SELECT 
             e.ID AS empleo_id,
@@ -11,7 +12,8 @@ router.get('/jobs', async (req, res) => {
             e.DESCRIPCION AS descripcion,
             e.SALARIO AS salario,
             e.FECHA_CREACION AS fecha_creacion,
-            GROUP_CONCAT(h.NOMBRE) AS habilidades
+            GROUP_CONCAT(h.NOMBRE) AS habilidades,
+            (SELECT COUNT(*) FROM POSTULACION WHERE ID_EMPLEO = e.ID) AS postulados
         FROM 
             EMPLEO e
         JOIN 
@@ -30,7 +32,7 @@ router.get('/jobs', async (req, res) => {
     }
 });
 
-router.post('/create', async (req, res) => {
+router.post('/create', authenticateJWT, async (req, res) => {
     const { puesto, descripcion, salario, skills } = req.body;
     const fechaCreacion = new Date();
     console.log(req.body);
@@ -62,7 +64,53 @@ router.post('/create', async (req, res) => {
     } catch (err) {
         res.status(500).json({ err: err.message });
     }
-    console.log('POST /Empleo');
+    console.log('POST /jobs/create');
 });
+
+router.post('/apply', authenticateJWT, async (req, res) => {
+    const { userId, jobId } = req.body;
+    const fechaAplicacion = new Date();
+
+    try {
+        const [existingApplications] = await db.query('SELECT * FROM POSTULACION WHERE ID_USUARIO = ? AND ID_EMPLEO = ?', [userId, jobId]);
+        if (existingApplications.length > 0) {
+            throw new Error('User already applied to this job');
+        }
+
+        const query = 'INSERT INTO POSTULACION (ID_USUARIO, ID_EMPLEO, FECHA_POSTULACION) VALUES (?, ?, ?)';
+        await db.query(query, [userId, jobId, fechaAplicacion]);
+
+        res.json({ message: 'Applied to job!' });
+    } catch (err) {
+        res.status(500).json({ err: err.message });
+    }
+    console.log('POST /jobs/apply');
+});
+
+router.get('/postulates', authenticateJWT, async (req, res) => {
+    const query = `
+        SELECT 
+            E.PUESTO,
+            CONCAT(U.NOMBRE, ' ', U.APELLIDO) AS POSTULADO,
+            U.FOTO AS FOTO,
+            U.CV AS CV,
+            E.SALARIO,
+            P.FECHA_POSTULACION AS FECHA_CREACION
+        FROM 
+            POSTULACION P
+        JOIN 
+            USUARIO U ON P.ID_USUARIO = U.ID
+        JOIN 
+            EMPLEO E ON P.ID_EMPLEO = E.ID
+    `;
+
+    try {
+        const [results] = await db.query(query);
+        res.json(results);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 module.exports = router;

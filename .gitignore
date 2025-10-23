@@ -1,0 +1,39 @@
+# Environment variables
+**.env
+.env
+.env.local
+.env.production
+
+# Node modules
+Node/node_modules
+Frontend/node_modules
+node_modules/
+
+# Build outputs
+Frontend/build
+dist/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# AWS
+.aws/
+*.pem
+
+# Documentos privados
+Enunciado/Requerimientos.txt
+Enunciado/Servicios.jpg
+
+# Temp files
+*.tmp
+temp/
+tmp/

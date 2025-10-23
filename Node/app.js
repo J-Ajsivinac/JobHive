@@ -8,14 +8,14 @@ const port = process.env.API_PORT || 3000;
 
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
-const adminRouter = require('./routes/admin');
+const jobsRouter = require('./routes/jobs');
 
 app.use(cors());
 app.use(express.json( { limit: '50mb' } ));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/admin', adminRouter);
+app.use('/jobs', jobsRouter);
 
 app.use((req, res) => {
   res.status(404).send('Not found');
