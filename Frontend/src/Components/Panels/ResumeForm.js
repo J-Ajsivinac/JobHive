@@ -36,7 +36,7 @@ const ResumeForm = ({ job }) => {
                     },
                     body: JSON.stringify({
                         text: plainText,
-                        voiceId: "Enrique", // Puedes cambiar la voz según prefieras
+                        voiceId: "Enrique",
                     }),
                 }
             );
