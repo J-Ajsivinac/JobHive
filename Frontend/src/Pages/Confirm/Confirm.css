@@ -1,0 +1,23 @@
+.title-confirm {
+    margin: 0;
+}
+
+.span-email {
+    font-weight: 800;
+    color: var(--light-blue);
+}
+
+.form-confirm {
+    display: grid;
+    grid-template-columns: repeat(6, 4rem);
+    padding: .5rem;
+    gap: 1rem;
+}
+
+.code-confirm {
+    font-size: 1.5rem;
+    text-align: center;
+    padding: 0;
+    height: 4rem;
+    line-height: 4rem;
+}
