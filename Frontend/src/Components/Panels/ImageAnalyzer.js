@@ -122,12 +122,14 @@ const ImageAnalyzer = () => {
             // Buscar empleos coincidentes automáticamente
             if (data.tags && data.tags.length > 0) {
                 console.log(
-                    "🔍 Iniciando búsqueda de empleos con habilidades:",
+                    "[SEARCH] Iniciando búsqueda de empleos con habilidades:",
                     data.tags
                 );
                 await findMatchingJobs(data.tags);
             } else {
-                console.warn("⚠️ No se detectaron habilidades (tags vacío)");
+                console.warn(
+                    "[WARNING] No se detectaron habilidades (tags vacío)"
+                );
             }
         } catch (err) {
             console.error("Error al analizar la imagen:", err);
@@ -143,8 +145,8 @@ const ImageAnalyzer = () => {
         try {
             const token = localStorage.getItem("accessToken");
 
-            console.log("🎯 Buscando empleos que coincidan con:", skills);
-            console.log("📊 Total de habilidades a buscar:", skills.length);
+            console.log("[MATCH] Buscando empleos que coincidan con:", skills);
+            console.log("[INFO] Total de habilidades a buscar:", skills.length);
 
             const response = await fetch(
                 `${process.env.REACT_APP_API_URL}/jobs/match-skills`,
@@ -163,16 +165,16 @@ const ImageAnalyzer = () => {
             const data = await response.json();
 
             if (!response.ok) {
-                console.error("❌ Error al buscar empleos:", data.message);
+                console.error("[ERROR] Error al buscar empleos:", data.message);
                 setJobMatches({ total_matches: 0, matches: [] });
                 return;
             }
 
-            console.log("✅ Empleos encontrados:", data.total_matches);
-            console.log("📋 Detalles:", data);
+            console.log("[SUCCESS] Empleos encontrados:", data.total_matches);
+            console.log("[DATA] Detalles:", data);
             setJobMatches(data);
         } catch (err) {
-            console.error("❌ Error al buscar empleos coincidentes:", err);
+            console.error("[ERROR] Error al buscar empleos coincidentes:", err);
             setJobMatches({ total_matches: 0, matches: [] });
         } finally {
             setLoadingMatches(false);
@@ -201,7 +203,7 @@ const ImageAnalyzer = () => {
                     body: JSON.stringify({
                         userId: user.id,
                         jobId: job.empleo_id,
-                    })
+                    }),
                 }
             );
 
@@ -217,9 +219,7 @@ const ImageAnalyzer = () => {
                 return;
             }
 
-            alert(
-                `¡Te has postulado exitosamente al puesto!`
-            );
+            alert(`¡Te has postulado exitosamente al puesto!`);
 
             // Actualizar el contador de postulados
             if (jobMatches && jobMatches.matches) {
@@ -386,12 +386,14 @@ const ImageAnalyzer = () => {
             // Buscar empleos coincidentes automáticamente
             if (data.tags && data.tags.length > 0) {
                 console.log(
-                    "🔍 Iniciando búsqueda de empleos con habilidades:",
+                    "[SEARCH] Iniciando búsqueda de empleos con habilidades:",
                     data.tags
                 );
                 await findMatchingJobs(data.tags);
             } else {
-                console.warn("⚠️ No se detectaron habilidades (tags vacío)");
+                console.warn(
+                    "[WARNING] No se detectaron habilidades (tags vacío)"
+                );
             }
         } catch (err) {
             console.error("Error al analizar el CV:", err);
@@ -438,7 +440,7 @@ const ImageAnalyzer = () => {
                                 </>
                             ) : (
                                 <>
-                                    <span className="icon">🤖</span>
+                                    <span className="icon">⚙</span>
                                     Analizar Mi CV Automáticamente
                                 </>
                             )}
@@ -468,7 +470,7 @@ const ImageAnalyzer = () => {
                         onClick={handleButtonClick}
                         disabled={analyzing}
                     >
-                        <span className="icon">📁</span>
+                        <span className="icon">�</span>
                         Seleccionar Imagen
                     </button>
 
@@ -497,7 +499,7 @@ const ImageAnalyzer = () => {
 
                 {error && (
                     <div className="error-message">
-                        <span className="icon">⚠️</span>
+                        <span className="icon">⚠</span>
                         {error}
                     </div>
                 )}
@@ -507,7 +509,7 @@ const ImageAnalyzer = () => {
                         <h3>Resultados del Análisis</h3>
                         {mode === "auto" && (
                             <p className="cv-analyzed-badge">
-                                🤖 Análisis automático de tu CV
+                                ⚙ Análisis automático de tu CV
                             </p>
                         )}
 
@@ -550,7 +552,7 @@ const ImageAnalyzer = () => {
                 {/* Sección de empleos coincidentes */}
                 {loadingMatches && (
                     <div className="matching-section">
-                        <h3>🔍 Buscando empleos coincidentes...</h3>
+                        <h3>Buscando empleos coincidentes...</h3>
                         <div className="loading-jobs">
                             <span className="spinner"></span>
                             <p>Analizando ofertas de empleo disponibles...</p>
@@ -561,7 +563,7 @@ const ImageAnalyzer = () => {
                 {jobMatches && jobMatches.total_matches > 0 && (
                     <div className="matching-section">
                         <h3>
-                            🎯 Empleos Coincidentes ({jobMatches.total_matches})
+                            Empleos Coincidentes ({jobMatches.total_matches})
                         </h3>
                         <p className="matching-subtitle">
                             Encontramos {jobMatches.total_matches}{" "}
@@ -606,7 +608,7 @@ const ImageAnalyzer = () => {
                                     <div className="job-details">
                                         <div className="detail-item">
                                             <span className="detail-icon">
-                                                💰
+                                                $
                                             </span>
                                             <span className="detail-text">
                                                 $
@@ -617,7 +619,7 @@ const ImageAnalyzer = () => {
                                         </div>
                                         <div className="detail-item">
                                             <span className="detail-icon">
-                                                👥
+                                                �
                                             </span>
                                             <span className="detail-text">
                                                 {job.postulados} postulados
@@ -625,7 +627,7 @@ const ImageAnalyzer = () => {
                                         </div>
                                         <div className="detail-item">
                                             <span className="detail-icon">
-                                                ✅
+                                                ✓
                                             </span>
                                             <span className="detail-text">
                                                 {job.skills_matched}/
@@ -697,9 +699,9 @@ const ImageAnalyzer = () => {
                                             }
                                         >
                                             {applyingToJob === job.empleo_id ? (
-                                                <>⏳ Postulando...</>
+                                                <>Postulando...</>
                                             ) : (
-                                                <>📝 Postularme</>
+                                                <>Postularme</>
                                             )}
                                         </button>
                                         <button
@@ -708,7 +710,7 @@ const ImageAnalyzer = () => {
                                                 handleViewJobDetails(job)
                                             }
                                         >
-                                            👁️ Ver más detalles
+                                            Ver más detalles
                                         </button>
                                     </div>
                                 </div>
@@ -721,9 +723,9 @@ const ImageAnalyzer = () => {
                     jobMatches.total_matches === 0 &&
                     !loadingMatches && (
                         <div className="matching-section">
-                            <h3>🔍 Empleos Coincidentes</h3>
+                            <h3>Empleos Coincidentes</h3>
                             <div className="no-matches">
-                                <span className="icon">😕</span>
+                                <span className="icon">ℹ</span>
                                 <p>
                                     No se encontraron empleos que coincidan con
                                     tus habilidades actuales.
@@ -749,7 +751,7 @@ const ImageAnalyzer = () => {
                             </>
                         ) : (
                             <>
-                                <span className="icon">🔍</span>
+                                <span className="icon">�</span>
                                 Analizar Imagen
                             </>
                         )}
@@ -761,7 +763,7 @@ const ImageAnalyzer = () => {
                             onClick={handleReset}
                             disabled={analyzing}
                         >
-                            <span className="icon">🔄</span>
+                            <span className="icon">↻</span>
                             Nuevo Análisis
                         </button>
                     )}
@@ -785,9 +787,7 @@ const ImageAnalyzer = () => {
                             &times;
                         </button>
 
-                        <h2 className="job-modal-title">
-                            📋 Detalles del Empleo
-                        </h2>
+                        <h2 className="job-modal-title">Detalles del Empleo</h2>
 
                         <div className="job-modal-body">
                             <div className="job-modal-header">
@@ -801,12 +801,12 @@ const ImageAnalyzer = () => {
                             </div>
 
                             <div className="job-modal-section">
-                                <h4>💼 Descripción</h4>
+                                <h4>Descripción</h4>
                                 <p>{selectedJob.descripcion}</p>
                             </div>
 
                             <div className="job-modal-section">
-                                <h4>💰 Información Salarial</h4>
+                                <h4>Información Salarial</h4>
                                 <p className="salary-info">
                                     $
                                     {parseFloat(
@@ -817,7 +817,7 @@ const ImageAnalyzer = () => {
                             </div>
 
                             <div className="job-modal-section">
-                                <h4>📅 Fecha de Publicación</h4>
+                                <h4>Fecha de Publicación</h4>
                                 <p>
                                     {new Date(
                                         selectedJob.fecha_creacion
@@ -830,7 +830,7 @@ const ImageAnalyzer = () => {
                             </div>
 
                             <div className="job-modal-section">
-                                <h4>👥 Postulantes</h4>
+                                <h4>Postulantes</h4>
                                 <p>
                                     {selectedJob.postulados} personas ya se han
                                     postulado
@@ -839,7 +839,7 @@ const ImageAnalyzer = () => {
 
                             <div className="job-modal-section">
                                 <h4>
-                                    🎯 Habilidades Requeridas (
+                                    Habilidades Requeridas (
                                     {selectedJob.skills_matched}/
                                     {selectedJob.skills_required})
                                 </h4>
@@ -902,9 +902,9 @@ const ImageAnalyzer = () => {
                                     }
                                 >
                                     {applyingToJob === selectedJob.empleo_id ? (
-                                        <>⏳ Postulando...</>
+                                        <>Postulando...</>
                                     ) : (
-                                        <>📝 Postularme a este empleo</>
+                                        <>Postularme a este empleo</>
                                     )}
                                 </button>
                                 <button

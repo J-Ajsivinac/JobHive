@@ -157,7 +157,7 @@ const CVUpload = ({ onUploadSuccess }) => {
                     onClick={handleButtonClick}
                     className="cv-file-label"
                 >
-                    <span className="cv-file-icon">📄</span>
+                    <span className="cv-file-icon">�</span>
                     <span>
                         {selectedFile
                             ? selectedFile.name
@@ -194,10 +194,10 @@ const CVUpload = ({ onUploadSuccess }) => {
                     {uploading ? "Subiendo..." : "Subir CV"}
                 </button>
 
-                {error && <div className="cv-upload-error">⚠️ {error}</div>}
+                {error && <div className="cv-upload-error">⚠ {error}</div>}
 
                 {success && (
-                    <div className="cv-upload-success">✅ {success}</div>
+                    <div className="cv-upload-success">✓ {success}</div>
                 )}
             </div>
         </div>

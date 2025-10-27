@@ -100,7 +100,7 @@ const UserProfile = () => {
                 <h3>Currículum Vitae</h3>
                 {user.cv ? (
                     <div className="cv-info">
-                        <p className="cv-status">✅ CV Subido</p>
+                        <p className="cv-status">✓ CV Subido</p>
                         <a
                             href={user.cv}
                             target="_blank"
@@ -119,7 +119,7 @@ const UserProfile = () => {
                 ) : (
                     <div className="cv-info">
                         <p className="cv-status-warning">
-                            ⚠️ No has subido tu CV
+                            ⚠ No has subido tu CV
                         </p>
                         <button
                             onClick={() => setShowCVUpload(true)}

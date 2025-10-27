@@ -259,7 +259,7 @@ router.post("/match-skills", authenticateJWT, async (req, res) => {
                             matchingSkills.push(userSkill);
                             matchedFromUser.add(userSkill);
                             console.log(
-                                `✓ Match exacto: "${userSkill}" = "${empleoSkill}"`
+                                `[MATCH] Match exacto: "${userSkill}" = "${empleoSkill}"`
                             );
                         }
                     }
@@ -272,7 +272,7 @@ router.post("/match-skills", authenticateJWT, async (req, res) => {
                             matchingSkills.push(userSkill);
                             matchedFromUser.add(userSkill);
                             console.log(
-                                `✓ Match parcial: "${userSkill}" ~ "${empleoSkill}"`
+                                `[MATCH] Match parcial: "${userSkill}" ~ "${empleoSkill}"`
                             );
                         }
                     }

@@ -122,17 +122,17 @@ const Postulates = () => {
             "En revisión": {
                 backgroundColor: "#cfe2ff",
                 color: "#084298",
-                icon: "👁️",
+                icon: "👁",
             },
             Aceptado: {
                 backgroundColor: "#d1e7dd",
                 color: "#0f5132",
-                icon: "✅",
+                icon: "✓",
             },
             Rechazado: {
                 backgroundColor: "#f8d7da",
                 color: "#842029",
-                icon: "❌",
+                icon: "✗",
             },
         };
         return styles[estado] || styles["Pendiente"];
@@ -328,13 +328,13 @@ const Postulates = () => {
                                             ⏳ Pendiente
                                         </option>
                                         <option value="En revisión">
-                                            👁️ En revisión
+                                            👁 En revisión
                                         </option>
                                         <option value="Aceptado">
-                                            ✅ Aceptado
+                                            ✓ Aceptado
                                         </option>
                                         <option value="Rechazado">
-                                            ❌ Rechazado
+                                            ✗ Rechazado
                                         </option>
                                     </select>
                                     {updatingStatus ===
@@ -373,7 +373,7 @@ const Postulates = () => {
                         animation: "slideIn 0.3s ease",
                     }}
                 >
-                    ✅ ¡Estado actualizado correctamente!
+                    ✓ ¡Estado actualizado correctamente!
                 </div>
             )}
         </div>
