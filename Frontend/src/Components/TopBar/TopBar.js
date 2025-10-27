@@ -111,7 +111,7 @@ const TopBar = ({ toggleMenu, menuOpen }) => {
             <div className='topBar-header'>
                 <div className='logo'>
                     <img src={logo} alt="Logo" className='logo-img' />
-                    <h1>Hire<span>Vision</span></h1>
+                    <h1>Job<span>Hive</span></h1>
                 </div>
                 <div className='menu-icon' onClick={toggleMenu}>
                     {menuOpen ? <IoClose className='io-menu' /> : <IoMenu className='io-menu' />}
