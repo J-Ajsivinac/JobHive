@@ -1187,46 +1187,6 @@ npm install
 pm2 restart api
 ```
 
-### 9.2 CI/CD Propuesto
-
-**GitHub Actions Workflow**
-
-```yaml
-name: Deploy to Production
-
-on:
-    push:
-        branches: [main]
-
-jobs:
-    deploy-frontend:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v2
-            - name: Build React
-              run: |
-                  cd Frontend
-                  npm install
-                  npm run build
-            - name: Deploy to S3
-              run: aws s3 sync Frontend/build/ s3://jobhive-frontend
-
-    deploy-backend:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v2
-            - name: Deploy to EC2
-              run: |
-                  ssh ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
-                  cd /var/www/api
-                  git pull
-                  npm install
-                  pm2 restart api
-                  EOF
-```
-
----
-
 ## 10. CONCLUSIONES Y RECOMENDACIONES
 
 ### 10.1 Logros del Proyecto
