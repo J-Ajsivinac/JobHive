@@ -1,18 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import './Jobs.css';
-import JobForm from './JobForm';
+import React, { useState, useEffect } from "react";
+import "./Jobs.css";
+import JobForm from "./JobForm";
 
 const JobDetailsModal = ({ job, onClose }) => {
     return (
         <div className="modal">
             <div className="modal-content">
-                <span className="close-btn" onClick={onClose}>&times;</span>
+                <span className="close-btn" onClick={onClose}>
+                    &times;
+                </span>
                 <h2 className="title-modal">Detalles del Puesto</h2>
                 <h3>{job.puesto}</h3>
-                <p><strong>Salario:</strong> {job.salario} Q/mes</p>
-                <p><strong>Fecha de Creación:</strong> {job.fecha_creacion}</p>
-                <p><strong>Habilidades:</strong> {job.habilidades}</p>
-                <p><strong>Descripción:</strong> {job.descripcion}</p>
+                <p>
+                    <strong>Salario:</strong> {job.salario} Q/mes
+                </p>
+                <p>
+                    <strong>Fecha de Creación:</strong> {job.fecha_creacion}
+                </p>
+                <p>
+                    <strong>Habilidades:</strong> {job.habilidades}
+                </p>
+                <p>
+                    <strong>Descripción:</strong> {job.descripcion}
+                </p>
             </div>
         </div>
     );
@@ -26,11 +36,25 @@ const Jobs = () => {
 
     const fetchJobs = async () => {
         try {
-            const response = await fetch(process.env.REACT_APP_API_URL + '/admin/jobs');
+            const token = localStorage.getItem("accessToken");
+            const response = await fetch(
+                process.env.REACT_APP_API_URL + "/jobs",
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+
             const data = await response.json();
             setJobs(data);
         } catch (error) {
-            console.error('Error fetching jobs:', error);
+            console.error("Error fetching jobs:", error);
         }
     };
 
@@ -59,7 +83,7 @@ const Jobs = () => {
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
-        return date.toISOString().split('T')[0];
+        return date.toISOString().split("T")[0];
     };
 
     return (
@@ -75,22 +99,32 @@ const Jobs = () => {
                     jobs.map((job) => (
                         <div key={job.empleo_id} className="job-card">
                             <div className="job-card-header">
-                                <span className="job-date">{formatDate(job.fecha_creacion)}</span>
+                                <span className="job-date">
+                                    {formatDate(job.fecha_creacion)}
+                                </span>
                             </div>
                             <h2 className="job-title">{job.puesto}</h2>
                             <div className="job-skills">
                                 {job.habilidades
-                                    .split(',')
+                                    .split(",")
                                     .slice(0, 5)
                                     .map((skill, index) => (
-                                        <span key={index} className="job-skill-tag">
+                                        <span
+                                            key={index}
+                                            className="job-skill-tag"
+                                        >
                                             {skill}
                                         </span>
                                     ))}
                             </div>
                             <div className="job-footer">
-                                <span className="job-salary">{job.salario} Q/mes</span>
-                                <button className="btn btn-primary" onClick={() => handleDetailsClick(job)}>
+                                <span className="job-salary">
+                                    {job.salario} Q/mes
+                                </span>
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={() => handleDetailsClick(job)}
+                                >
                                     Detalles
                                 </button>
                             </div>
@@ -104,7 +138,12 @@ const Jobs = () => {
             {showJobModal && (
                 <div className="modal">
                     <div className="modal-content">
-                        <span className="close-btn" onClick={handleCloseJobModal}>&times;</span>
+                        <span
+                            className="close-btn"
+                            onClick={handleCloseJobModal}
+                        >
+                            &times;
+                        </span>
                         <h2 className="title-modal">Nuevo Puesto</h2>
                         <JobForm handleCloseModal={handleCloseJobModal} />
                     </div>
@@ -112,7 +151,10 @@ const Jobs = () => {
             )}
 
             {showDetailsModal && selectedJob && (
-                <JobDetailsModal job={selectedJob} onClose={handleCloseDetailsModal} />
+                <JobDetailsModal
+                    job={selectedJob}
+                    onClose={handleCloseDetailsModal}
+                />
             )}
         </div>
     );
