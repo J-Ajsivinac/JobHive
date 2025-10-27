@@ -6,6 +6,7 @@ const pdf = require("pdf-parse");
 const translateText = require("../utils/translate.text");
 const imageProccesor = require("../utils/analyzer.txt");
 const textToSpeech = require("../utils/analyzer.audio");
+const { sendEmail } = require("../utils/email");
 
 const db = require("../utils/db");
 const authenticateJWT = require("../utils/authJWT");
@@ -154,6 +155,15 @@ router.post("/signin", async (req, res) => {
             cv: row[0].CV || null,
             admin: row[0].ADMIN,
         };
+
+        // Enviar correo de inicio de sesión
+        sendEmail({
+            to: email,
+            subject: 'Inicio de sesión - JobHive',
+            htmlBody: `<h1>Hola ${user.first_name}</h1><p>Has iniciado sesión en JobHive.</p>`,
+            textBody: `Hola ${user.first_name}, has iniciado sesión en JobHive.`
+        }).catch(err => console.error('Error enviando email:', err));
+
         res.json({ idToken, accessToken, user });
     } catch (err) {
         console.log(err);
