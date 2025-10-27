@@ -41,6 +41,7 @@ const Postulates = () => {
     const [postulates, setPostulates] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [updatingStatus, setUpdatingStatus] = useState(null);
 
     // Función para obtener las postulaciones
     const fetchPostulates = async () => {
@@ -100,12 +101,81 @@ const Postulates = () => {
         switch (estado) {
             case "Pendiente":
                 return "status-pending";
+            case "En revisión":
+                return "status-review";
             case "Rechazado":
                 return "status-rejected";
             case "Aceptado":
                 return "status-accepted";
             default:
                 return "status-pending";
+        }
+    };
+
+    const getStatusStyle = (estado) => {
+        const styles = {
+            Pendiente: {
+                backgroundColor: "#fff3cd",
+                color: "#856404",
+                icon: "⏳",
+            },
+            "En revisión": {
+                backgroundColor: "#cfe2ff",
+                color: "#084298",
+                icon: "👁️",
+            },
+            Aceptado: {
+                backgroundColor: "#d1e7dd",
+                color: "#0f5132",
+                icon: "✅",
+            },
+            Rechazado: {
+                backgroundColor: "#f8d7da",
+                color: "#842029",
+                icon: "❌",
+            },
+        };
+        return styles[estado] || styles["Pendiente"];
+    };
+
+    const handleStatusChange = async (postulacionId, nuevoEstado) => {
+        setUpdatingStatus(postulacionId);
+
+        try {
+            const token = localStorage.getItem("accessToken");
+            const response = await fetch(
+                `${process.env.REACT_APP_API_URL}/jobs/postulates/${postulacionId}/status`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ estado: nuevoEstado }),
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Error al actualizar el estado");
+            }
+
+            // Actualizar el estado local
+            setPostulates(
+                postulates.map((p) =>
+                    p.POSTULACION_ID === postulacionId
+                        ? { ...p, ESTADO: nuevoEstado }
+                        : p
+                )
+            );
+
+            // Mostrar notificación
+            setPopupVisible(true);
+            setTimeout(() => setPopupVisible(false), 3000);
+        } catch (err) {
+            console.error("Error al actualizar estado:", err);
+            alert("Error al actualizar el estado: " + err.message);
+        } finally {
+            setUpdatingStatus(null);
         }
     };
 
@@ -134,6 +204,8 @@ const Postulates = () => {
                             <th>CV</th>
                             <th>Salario</th>
                             <th>Fecha de Postulación</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -176,6 +248,108 @@ const Postulates = () => {
                                 </td>
                                 <td>Q{postulate.SALARIO}</td>
                                 <td>{formatDate(postulate.FECHA_CREACION)}</td>
+                                <td>
+                                    <span
+                                        className={`status-badge ${getStatusClass(
+                                            postulate.ESTADO
+                                        )}`}
+                                        style={{
+                                            backgroundColor: getStatusStyle(
+                                                postulate.ESTADO
+                                            ).backgroundColor,
+                                            color: getStatusStyle(
+                                                postulate.ESTADO
+                                            ).color,
+                                            padding: "6px 12px",
+                                            borderRadius: "20px",
+                                            fontSize: "0.85em",
+                                            fontWeight: "600",
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "6px",
+                                            border: `2px solid ${
+                                                getStatusStyle(postulate.ESTADO)
+                                                    .color
+                                            }40`,
+                                        }}
+                                    >
+                                        <span style={{ fontSize: "1.1em" }}>
+                                            {
+                                                getStatusStyle(postulate.ESTADO)
+                                                    .icon
+                                            }
+                                        </span>
+                                        {postulate.ESTADO}
+                                    </span>
+                                </td>
+                                <td>
+                                    <select
+                                        value={postulate.ESTADO}
+                                        onChange={(e) =>
+                                            handleStatusChange(
+                                                postulate.POSTULACION_ID,
+                                                e.target.value
+                                            )
+                                        }
+                                        disabled={
+                                            updatingStatus ===
+                                            postulate.POSTULACION_ID
+                                        }
+                                        style={{
+                                            padding: "8px 12px",
+                                            borderRadius: "6px",
+                                            border: "2px solid #5243F5",
+                                            backgroundColor: "white",
+                                            color: "#5243F5",
+                                            fontWeight: "600",
+                                            cursor:
+                                                updatingStatus ===
+                                                postulate.POSTULACION_ID
+                                                    ? "wait"
+                                                    : "pointer",
+                                            fontSize: "0.9em",
+                                            transition: "all 0.2s",
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (
+                                                updatingStatus !==
+                                                postulate.POSTULACION_ID
+                                            ) {
+                                                e.target.style.backgroundColor =
+                                                    "#f8f9ff";
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.target.style.backgroundColor =
+                                                "white";
+                                        }}
+                                    >
+                                        <option value="Pendiente">
+                                            ⏳ Pendiente
+                                        </option>
+                                        <option value="En revisión">
+                                            👁️ En revisión
+                                        </option>
+                                        <option value="Aceptado">
+                                            ✅ Aceptado
+                                        </option>
+                                        <option value="Rechazado">
+                                            ❌ Rechazado
+                                        </option>
+                                    </select>
+                                    {updatingStatus ===
+                                        postulate.POSTULACION_ID && (
+                                        <div
+                                            style={{
+                                                marginTop: "5px",
+                                                fontSize: "0.8em",
+                                                color: "#5243F5",
+                                            }}
+                                        >
+                                            Actualizando...
+                                        </div>
+                                    )}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -183,8 +357,23 @@ const Postulates = () => {
             )}
 
             {popupVisible && (
-                <div className="popup-notification">
-                    ¡Has aceptado el trabajo!
+                <div
+                    className="popup-notification"
+                    style={{
+                        position: "fixed",
+                        bottom: "20px",
+                        right: "20px",
+                        backgroundColor: "#d1e7dd",
+                        color: "#0f5132",
+                        padding: "15px 25px",
+                        borderRadius: "10px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                        fontWeight: "600",
+                        zIndex: 1000,
+                        animation: "slideIn 0.3s ease",
+                    }}
+                >
+                    ✅ ¡Estado actualizado correctamente!
                 </div>
             )}
         </div>

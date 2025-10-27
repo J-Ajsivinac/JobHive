@@ -1,5 +1,5 @@
 import React from "react";
-import { FaBriefcase, FaRegFile, FaUser } from "react-icons/fa";
+import { FaBriefcase, FaRegFile, FaUser, FaImage } from "react-icons/fa";
 import { IoIosLogOut } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
 import "./Menu.css";
@@ -38,12 +38,20 @@ const Menu = ({ isOpen, onPanelChange }) => {
                     {isAdmin ? "Postulados" : "Mis Postulaciones"}
                 </li>
                 {!isAdmin && (
-                    <li
-                        className="menu-item"
-                        onClick={() => onPanelChange("profile")}
-                    >
-                        <FaUser className="menu-icon" /> Mi Perfil
-                    </li>
+                    <>
+                        <li
+                            className="menu-item"
+                            onClick={() => onPanelChange("profile")}
+                        >
+                            <FaUser className="menu-icon" /> Mi Perfil
+                        </li>
+                        <li
+                            className="menu-item"
+                            onClick={() => onPanelChange("analyzer")}
+                        >
+                            <FaImage className="menu-icon" /> Analizar Imagen
+                        </li>
+                    </>
                 )}
                 {isMobile && (
                     <>

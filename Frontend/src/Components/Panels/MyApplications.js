@@ -66,6 +66,33 @@ const MyApplications = () => {
         return skillsString.split(",").map((skill) => skill.trim());
     };
 
+    // Función para obtener el estilo del estado
+    const getStatusStyle = (estado) => {
+        const styles = {
+            Pendiente: {
+                backgroundColor: "#fff3cd",
+                color: "#856404",
+                icon: "⏳",
+            },
+            "En revisión": {
+                backgroundColor: "#cfe2ff",
+                color: "#084298",
+                icon: "👁️",
+            },
+            Aceptado: {
+                backgroundColor: "#d1e7dd",
+                color: "#0f5132",
+                icon: "✅",
+            },
+            Rechazado: {
+                backgroundColor: "#f8d7da",
+                color: "#842029",
+                icon: "❌",
+            },
+        };
+        return styles[estado] || styles["Pendiente"];
+    };
+
     if (loading) {
         return <div className="loading">Cargando tus postulaciones...</div>;
     }
@@ -180,20 +207,31 @@ const MyApplications = () => {
                             <div
                                 style={{
                                     marginTop: "15px",
-                                    padding: "10px",
-                                    backgroundColor: "#fff3cd",
+                                    padding: "12px",
+                                    backgroundColor: getStatusStyle(app.ESTADO)
+                                        .backgroundColor,
                                     borderRadius: "8px",
                                     textAlign: "center",
+                                    border: `2px solid ${
+                                        getStatusStyle(app.ESTADO).color
+                                    }20`,
                                 }}
                             >
                                 <span
                                     style={{
-                                        color: "#856404",
+                                        color: getStatusStyle(app.ESTADO).color,
                                         fontWeight: "bold",
-                                        fontSize: "0.9em",
+                                        fontSize: "0.95em",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        gap: "8px",
                                     }}
                                 >
-                                    Estado: Pendiente
+                                    <span style={{ fontSize: "1.2em" }}>
+                                        {getStatusStyle(app.ESTADO).icon}
+                                    </span>
+                                    Estado: {app.ESTADO}
                                 </span>
                             </div>
                         </div>

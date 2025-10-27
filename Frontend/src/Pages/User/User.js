@@ -6,6 +6,7 @@ import Menu from "../../Components/Menu/Menu";
 import Jobs from "../../Components/Panels/GetJob";
 import MyApplications from "../../Components/Panels/MyApplications";
 import UserProfile from "../../Components/Panels/UserProfile";
+import ImageAnalyzer from "../../Components/Panels/ImageAnalyzer";
 
 const User = () => {
     const navigate = useNavigate();
@@ -41,6 +42,8 @@ const User = () => {
                 return <MyApplications />;
             case "profile":
                 return <UserProfile />;
+            case "analyzer":
+                return <ImageAnalyzer />;
             default:
                 return <Jobs />;
         }

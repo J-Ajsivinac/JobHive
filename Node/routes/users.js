@@ -105,11 +105,9 @@ router.post("/confirm", (req, res) => {
         if (err) {
             console.log(err);
             if (err.code === "LimitExceededException") {
-                return res
-                    .status(429)
-                    .json({
-                        err: "Too many attempts. Please try again later.",
-                    });
+                return res.status(429).json({
+                    err: "Too many attempts. Please try again later.",
+                });
             }
             return res.status(400).json({ err: err.message });
         } else {
@@ -159,10 +157,10 @@ router.post("/signin", async (req, res) => {
         // Enviar correo de inicio de sesión
         sendEmail({
             to: email,
-            subject: 'Inicio de sesión - JobHive',
+            subject: "Inicio de sesión - JobHive",
             htmlBody: `<h1>Hola ${user.first_name}</h1><p>Has iniciado sesión en JobHive.</p>`,
-            textBody: `Hola ${user.first_name}, has iniciado sesión en JobHive.`
-        }).catch(err => console.error('Error enviando email:', err));
+            textBody: `Hola ${user.first_name}, has iniciado sesión en JobHive.`,
+        }).catch((err) => console.error("Error enviando email:", err));
 
         res.json({ idToken, accessToken, user });
     } catch (err) {
@@ -338,11 +336,9 @@ router.post("/upload-cv", authenticateJWT, async (req, res) => {
                 success: true,
             });
         } else {
-            return res
-                .status(400)
-                .json({
-                    err: "Invalid file format. Please send image (PNG/JPG) or PDF with base64 data URI",
-                });
+            return res.status(400).json({
+                err: "Invalid file format. Please send image (PNG/JPG) or PDF with base64 data URI",
+            });
         }
     } catch (err) {
         console.error("Error al subir CV:", err);
@@ -357,28 +353,54 @@ router.post("/analyzeText", authenticateJWT, async (req, res) => {
             return res.status(400).json({ message: "Imagen no proporcionada" });
         }
 
+        console.log("=== Inicio análisis de imagen ===");
+        console.log("Tipo de imagen:", imagen.substring(0, 50) + "...");
+
+        // Validar que sea una imagen válida
+        if (!imagen.startsWith("data:image/")) {
+            return res.status(400).json({
+                message:
+                    "El archivo debe ser una imagen (PNG, JPG, JPEG). Los PDFs deben ser convertidos a imagen primero.",
+                error: "INVALID_FORMAT",
+            });
+        }
+
         const imageBuffer = Buffer.from(
             imagen.replace(/^data:image\/\w+;base64,/, ""),
             "base64"
         );
-        if (!imageBuffer) {
+
+        if (!imageBuffer || imageBuffer.length === 0) {
             return res
                 .status(400)
                 .json({ message: "Error al procesar la imagen" });
         }
 
+        console.log(
+            "Buffer de imagen creado, tamaño:",
+            imageBuffer.length,
+            "bytes"
+        );
+
         const labels = await imageProccesor.extractText(imageBuffer);
 
+        console.log("Textos extraídos:", labels.length, "elementos");
+
         const tags = extractTags(labels);
+
+        console.log("Tags generados:", tags);
+        console.log("=== Fin análisis de imagen ===");
+
         res.json({ labels, tags });
     } catch (err) {
         console.error("Error al analizar la imagen:", err);
+        console.error("Stack completo:", err.stack);
         res.status(500).json({
             error: err.message,
-            message: "Error en el servidor",
+            message: "Error en el servidor al analizar la imagen",
         });
     }
-    console.log("POST /analyzeImage");
+    console.log("POST /analyzeText completado");
 });
 
 router.post("/playAudio", authenticateJWT, async (req, res) => {
@@ -550,13 +572,12 @@ function extractTags(detectedTexts) {
         lowerCaseTexts.some((text) => text.includes(keyword.toLowerCase()))
     );
 
-    const minTags = 5;
-    const maxTags = 7;
-    const numTags = Math.min(Math.max(matchingTags.length, minTags), maxTags);
+    console.log("=== Habilidades detectadas ===");
+    console.log("Total de habilidades encontradas:", matchingTags.length);
+    console.log("Habilidades:", matchingTags);
 
-    const selectedTags = shuffleArray(matchingTags).slice(0, numTags);
-
-    return selectedTags;
+    // Retornar TODAS las habilidades detectadas, no solo un subconjunto aleatorio
+    return matchingTags;
 }
 
 function shuffleArray(array) {
