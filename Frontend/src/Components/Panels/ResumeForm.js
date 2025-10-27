@@ -2,12 +2,34 @@ import React, { useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
-const ResumeForm = ({ job }) => {
+const ResumeForm = ({ job, onClose }) => {
     const [translatedTitle, setTranslatedTitle] = useState(""); // Estado para manejar el título traducido
     const [isPlaying, setIsPlaying] = useState(false); // Estado para controlar si está reproduciendo
     const [audioElement, setAudioElement] = useState(null); // Referencia al audio actual
+    const [isApplying, setIsApplying] = useState(false); // Estado para el proceso de postulación
 
     if (!job) return null; // Si no hay trabajo seleccionado, no mostrar nada
+
+    // Función para formatear la fecha
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("es-ES", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+        });
+    };
+
+    // Función para formatear el salario
+    const formatSalary = (salary) => {
+        return `$${salary} USD/mes`;
+    };
+
+    // Función para procesar las habilidades
+    const processSkills = (skillsString) => {
+        if (!skillsString) return [];
+        return skillsString.split(",").map((skill) => skill.trim());
+    };
 
     const handlePlayClick = async () => {
         try {
@@ -23,7 +45,7 @@ const ResumeForm = ({ job }) => {
 
             // Extraer solo el texto plano de la descripción (sin HTML)
             const tempDiv = document.createElement("div");
-            tempDiv.innerHTML = job.description;
+            tempDiv.innerHTML = job.descripcion || job.description || "";
             const plainText = tempDiv.textContent || tempDiv.innerText || "";
 
             // Hacer la petición al endpoint de Polly
@@ -88,7 +110,7 @@ const ResumeForm = ({ job }) => {
         console.log("Traducir a:", selectedLanguage);
 
         if (selectedLanguage === "es") {
-            setTranslatedTitle(job.description);
+            setTranslatedTitle(job.descripcion || job.description || "");
         } else {
             fetch(process.env.REACT_APP_TRANSLATE_API_URL, {
                 method: "POST",
@@ -96,7 +118,7 @@ const ResumeForm = ({ job }) => {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    texto: job.description,
+                    texto: job.descripcion || job.description || "",
                     source_language: "es",
                     target_language: selectedLanguage,
                 }),
@@ -128,23 +150,84 @@ const ResumeForm = ({ job }) => {
         }
     };
 
+    // Función para postularse a un trabajo
+    const handleApplyToJob = async () => {
+        try {
+            setIsApplying(true);
+
+            // Obtener el token y el usuario del localStorage
+            const token = localStorage.getItem("accessToken");
+            const user = JSON.parse(localStorage.getItem("user"));
+
+            if (!user || !user.id) {
+                alert(
+                    "No se pudo obtener la información del usuario. Por favor, inicia sesión nuevamente."
+                );
+                return;
+            }
+
+            const response = await fetch(
+                `${process.env.REACT_APP_API_URL}/jobs/apply`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        jobId: job.empleo_id || job.id,
+                    }),
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.err || "Error al postularse al trabajo");
+            }
+
+            alert("¡Te has postulado exitosamente al trabajo!");
+
+            // Cerrar el modal si existe la función onClose
+            if (onClose) {
+                onClose();
+            }
+        } catch (error) {
+            console.error("Error al postularse:", error);
+            alert(
+                error.message ||
+                    "Error al postularse al trabajo. Por favor, intenta de nuevo."
+            );
+        } finally {
+            setIsApplying(false);
+        }
+    };
+
     return (
         <form
             className="job-form"
             style={{ maxHeight: "500px", overflowY: "scroll" }}
         >
             <div className="form-header">
-                <h2>{job.title}</h2>
+                <h2>{job.puesto || job.title}</h2>
                 <p className="salary-info">
                     <strong>Salario: </strong>
-                    {job.salary}
+                    {formatSalary(job.salario || job.salary)}
                 </p>
             </div>
 
             <div className="form-group1">
                 <p className="job-info">
                     <strong>Fecha de Publicación: </strong>
-                    {job.date}
+                    {formatDate(job.fecha_creacion || job.date)}
+                </p>
+            </div>
+
+            <div className="form-group1">
+                <p className="job-info">
+                    <strong>Postulados: </strong>
+                    {job.postulados || 0}
                 </p>
             </div>
 
@@ -154,11 +237,13 @@ const ResumeForm = ({ job }) => {
                         <strong>Habilidades:</strong>
                     </p>
                     <div className="chips-container">
-                        {job.skills.map((skill, index) => (
-                            <span key={index} className="chip">
-                                {skill}
-                            </span>
-                        ))}
+                        {processSkills(job.habilidades || job.skills).map(
+                            (skill, index) => (
+                                <span key={index} className="chip">
+                                    {skill}
+                                </span>
+                            )
+                        )}
                     </div>
                 </div>
             </div>
@@ -168,7 +253,7 @@ const ResumeForm = ({ job }) => {
                     <strong>Descripción del puesto:</strong>
                 </p>
                 <ReactQuill
-                    value={job.description}
+                    value={job.descripcion || job.description || ""}
                     readOnly={true}
                     theme="bubble"
                     style={{ maxHeight: "200px", overflowY: "auto" }} // Limita el tamaño del editor con barra de desplazamiento
@@ -227,16 +312,41 @@ const ResumeForm = ({ job }) => {
             </div>
 
             {/* Título traducido del puesto */}
-            <div className="form-group1" style={{ marginTop: "20px" }}>
-                <p>
-                    <strong>Título del Puesto Traducido:</strong>
-                </p>
-                <ReactQuill
-                    value={translatedTitle}
-                    readOnly={true}
-                    theme="bubble"
-                    style={{ maxHeight: "100px", overflowY: "auto" }} // Limita el tamaño del editor con barra de desplazamiento
-                />
+            {translatedTitle && (
+                <div className="form-group1" style={{ marginTop: "20px" }}>
+                    <p>
+                        <strong>Descripción Traducida:</strong>
+                    </p>
+                    <ReactQuill
+                        value={translatedTitle}
+                        readOnly={true}
+                        theme="bubble"
+                        style={{ maxHeight: "100px", overflowY: "auto" }} // Limita el tamaño del editor con barra de desplazamiento
+                    />
+                </div>
+            )}
+
+            {/* Botón para postularse */}
+            <div style={{ marginTop: "20px", textAlign: "center" }}>
+                <button
+                    type="button"
+                    onClick={handleApplyToJob}
+                    disabled={isApplying}
+                    style={{
+                        backgroundColor: isApplying ? "#cccccc" : "#5243F5",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "8px",
+                        padding: "12px 30px",
+                        fontSize: "16px",
+                        fontWeight: "bold",
+                        cursor: isApplying ? "not-allowed" : "pointer",
+                        boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+                        transition: "background-color 0.3s ease",
+                    }}
+                >
+                    {isApplying ? "Postulando..." : "Postularme"}
+                </button>
             </div>
         </form>
     );

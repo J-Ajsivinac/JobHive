@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import ReactQuill from 'react-quill';
-import Swal from 'sweetalert2';
-import 'react-quill/dist/quill.snow.css';
-import './JobForm.css';
+import React, { useState } from "react";
+import ReactQuill from "react-quill";
+import Swal from "sweetalert2";
+import "react-quill/dist/quill.snow.css";
+import "./JobForm.css";
 
 const JobForm = ({ handleCloseModal }) => {
-    const [description, setDescription] = useState('');
-    const [skillInput, setSkillInput] = useState('');
+    const [description, setDescription] = useState("");
+    const [skillInput, setSkillInput] = useState("");
     const [skills, setSkills] = useState([]);
-    const [puesto, setPuesto] = useState('');
-    const [salario, setSalario] = useState('');
+    const [puesto, setPuesto] = useState("");
+    const [salario, setSalario] = useState("");
 
     const handleDescriptionChange = (value) => {
         setDescription(value);
@@ -21,11 +21,11 @@ const JobForm = ({ handleCloseModal }) => {
 
     const handleKeyDown = (e) => {
         // Detectar Ctrl + Enter
-        if (e.key === 'Enter' && e.ctrlKey) {
+        if (e.key === "Enter" && e.ctrlKey) {
             e.preventDefault();
-            if (skillInput.trim() !== '') {
+            if (skillInput.trim() !== "") {
                 setSkills([...skills, skillInput.trim()]);
-                setSkillInput(''); // Limpiar el input
+                setSkillInput(""); // Limpiar el input
             }
         }
     };
@@ -39,78 +39,81 @@ const JobForm = ({ handleCloseModal }) => {
 
         if (!puesto || !salario || !description || skills.length === 0) {
             Swal.fire({
-                title: '¡Error!',
-                text: 'Por favor, llena todos los campos',
-                icon: 'error',
-                confirmButtonText: 'Ok'
+                title: "¡Error!",
+                text: "Por favor, llena todos los campos",
+                icon: "error",
+                confirmButtonText: "Ok",
             });
             return;
         }
 
-        fetch(process.env.REACT_APP_API_URL + '/admin/create', {
-            method: 'POST',
+        const token = localStorage.getItem("accessToken");
+
+        fetch(process.env.REACT_APP_API_URL + "/jobs/create", {
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json',
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
                 puesto: puesto,
                 descripcion: description,
                 salario: salario,
-                skills: skills
+                skills: skills,
+            }),
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.err) {
+                    Swal.fire({
+                        title: "¡Error!",
+                        text: data.err,
+                        icon: "error",
+                        confirmButtonText: "Ok",
+                    });
+                } else {
+                    Swal.fire({
+                        title: "¡Éxito!",
+                        text: "Puesto creado",
+                        icon: "success",
+                        confirmButtonText: "Ok",
+                    }).then(() => {
+                        handleCloseModal();
+                    });
+                }
             })
-        })
-        .then((res) => res.json())
-        .then((data) => {
-            if (data.err) {
+            .catch((err) => {
                 Swal.fire({
-                    title: '¡Error!',
-                    text: data.err,
-                    icon: 'error',
-                    confirmButtonText: 'Ok'
+                    title: "¡Error!",
+                    text: err.message,
+                    icon: "error",
+                    confirmButtonText: "Ok",
                 });
-            } else {
-                Swal.fire({
-                    title: '¡Éxito!',
-                    text: "Puesto creado",
-                    icon: 'success',
-                    confirmButtonText: 'Ok'
-                }).then(() => {
-                    handleCloseModal();
-                });
-            }
-        })
-        .catch((err) => {
-            Swal.fire({
-                title: '¡Error!',
-                text: err.message,
-                icon: 'error',
-                confirmButtonText: 'Ok'
             });
-        });
     };
 
     return (
         <form className="job-form" onSubmit={handleSubmit}>
             <div className="form-row">
                 <div className="form-group1">
-                    <input 
-                        type="text" 
-                        id="title" 
-                        required 
-                        placeholder=" " 
-                        value={puesto} 
-                        onChange={(e) => setPuesto(e.target.value)} 
+                    <input
+                        type="text"
+                        id="title"
+                        required
+                        placeholder=" "
+                        value={puesto}
+                        onChange={(e) => setPuesto(e.target.value)}
                     />
                     <label htmlFor="title">Título del puesto</label>
                 </div>
                 <div className="form-group1">
-                    <input 
-                        type="number" 
-                        id="salary" 
-                        required 
-                        placeholder=" " 
-                        value={salario} 
-                        onChange={(e) => setSalario(e.target.value)} 
+                    <input
+                        type="number"
+                        id="salary"
+                        required
+                        placeholder=" "
+                        value={salario}
+                        onChange={(e) => setSalario(e.target.value)}
                     />
                     <label htmlFor="salary">Salario</label>
                 </div>
@@ -144,10 +147,10 @@ const JobForm = ({ handleCloseModal }) => {
             </div>
 
             <div className="form-group1">
-                <ReactQuill 
-                    value={description} 
-                    onChange={handleDescriptionChange} 
-                    placeholder="Escribe la descripción del puesto..." 
+                <ReactQuill
+                    value={description}
+                    onChange={handleDescriptionChange}
+                    placeholder="Escribe la descripción del puesto..."
                 />
             </div>
 

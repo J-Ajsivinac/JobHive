@@ -1,50 +1,142 @@
-import React, { useState } from 'react';
-import './Jobs.css';
-import ResumeForm from './ResumeForm';
+import React, { useState, useEffect } from "react";
+import "./Jobs.css";
+import ResumeForm from "./ResumeForm";
 
 const GetJob = () => {
     const [showModal, setShowModal] = useState(false);
-    const [selectedJob, setSelectedJob] = useState(null); // Nuevo estado para el trabajo seleccionado
+    const [selectedJob, setSelectedJob] = useState(null);
+    const [jobs, setJobs] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    const jobs = Array.from({ length: 4 }, (_, index) => ({
-        id: index + 1,
-        title: `Trabajo ${index + 1}`,
-        description: `Descripción del trabajo ${index + 1}. Este es un trabajo de prueba para el panel de empleos y comprobar qué tanto`,
-        date: '20 Sep, 2024',
-        salary: '1000 USD/mes',
-        skills: ['Figma', 'Adobe XD', 'React', 'Node.js',,],
-    }));
+    const fetchJobs = async () => {
+        try {
+            const token = localStorage.getItem("accessToken");
+            const response = await fetch(
+                process.env.REACT_APP_API_URL + "/jobs",
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log("Fetched jobs:", data);
+            return data;
+        } catch (error) {
+            console.error("Error fetching jobs:", error);
+            throw error;
+        }
+    };
+
+    useEffect(() => {
+        const loadJobs = async () => {
+            try {
+                setLoading(true);
+                const data = await fetchJobs();
+                setJobs(data);
+            } catch (err) {
+                setError("Error al cargar los trabajos");
+                console.error("Error:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadJobs();
+    }, []);
+
+    // Función para formatear la fecha
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("es-ES", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+        });
+    };
+
+    // Función para formatear el salario
+    const formatSalary = (salary) => {
+        return `$${salary} USD/mes`;
+    };
+
+    // Función para procesar las habilidades
+    const processSkills = (skillsString) => {
+        if (!skillsString) return [];
+        return skillsString.split(",").map((skill) => skill.trim());
+    };
+
+    // Función para extraer texto limpio de la descripción HTML
+    const getCleanDescription = (htmlDescription) => {
+        if (!htmlDescription) return "";
+        // Remover etiquetas HTML y limitar longitud
+        const cleanText = htmlDescription.replace(/<[^>]*>/g, "");
+        return cleanText.length > 150
+            ? cleanText.substring(0, 150) + "..."
+            : cleanText;
+    };
 
     const handleNewJobClick = (job) => {
-        setSelectedJob(job); // Guardar el trabajo seleccionado
+        setSelectedJob(job);
         setShowModal(true);
     };
 
     const handleCloseModal = () => {
         setShowModal(false);
-        setSelectedJob(null); // Limpiar el trabajo seleccionado al cerrar
+        setSelectedJob(null);
     };
+
+    if (loading) {
+        return <div className="loading">Cargando trabajos...</div>;
+    }
+
+    if (error) {
+        return <div className="error">{error}</div>;
+    }
 
     return (
         <div className="jobs-container">
             <div className="jobs-grid">
                 {jobs.map((job) => (
-                    <div key={job.id} className="job-card">
+                    <div key={job.empleo_id || job.id} className="job-card">
                         <div className="job-card-header">
-                            <span className="job-date">{job.date}</span>
+                            <span className="job-date">
+                                {formatDate(job.fecha_creacion)}
+                            </span>
                         </div>
-                        <h2 className="job-title">{job.title}</h2>
-                        <p className="job-description">{job.description}</p>
+                        <h2 className="job-title">{job.puesto}</h2>
+                        <p className="job-description">
+                            {getCleanDescription(job.descripcion)}
+                        </p>
                         <div className="job-skills">
-                            {job.skills.map((skill, index) => (
-                                <span key={index} className="job-skill-tag">
-                                    {skill}
-                                </span>
-                            ))}
+                            {processSkills(job.habilidades).map(
+                                (skill, index) => (
+                                    <span key={index} className="job-skill-tag">
+                                        {skill}
+                                    </span>
+                                )
+                            )}
                         </div>
                         <div className="job-footer">
-                            <span className="job-salary">{job.salary}</span>
-                            <button className="btn btn-primary" onClick={() => handleNewJobClick(job)}>Detalles</button>
+                            <span className="job-salary">
+                                {formatSalary(job.salario)}
+                            </span>
+                            <div className="job-postulants">
+                                Postulados: {job.postulados || 0}
+                            </div>
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => handleNewJobClick(job)}
+                            >
+                                Detalles
+                            </button>
                         </div>
                     </div>
                 ))}
@@ -56,8 +148,11 @@ const GetJob = () => {
                         <span className="close-btn" onClick={handleCloseModal}>
                             &times;
                         </span>
-                        <h2 className='title-modal'>Detalles del Trabajo</h2>
-                        <ResumeForm job={selectedJob} /> {/* Pasar el trabajo seleccionado */}
+                        <h2 className="title-modal">Detalles del Trabajo</h2>
+                        <ResumeForm
+                            job={selectedJob}
+                            onClose={handleCloseModal}
+                        />
                     </div>
                 </div>
             )}

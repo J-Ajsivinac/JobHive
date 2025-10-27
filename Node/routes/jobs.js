@@ -1,10 +1,10 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const db = require('../utils/db');
-const authenticateJWT = require('../utils/authJWT');
-require('dotenv').config();
+const db = require("../utils/db");
+const authenticateJWT = require("../utils/authJWT");
+require("dotenv").config();
 
-router.get('/', authenticateJWT, async (req, res) => {
+router.get("", authenticateJWT, async (req, res) => {
     const query = `
         SELECT 
             e.ID AS empleo_id,
@@ -32,62 +32,79 @@ router.get('/', authenticateJWT, async (req, res) => {
     }
 });
 
-router.post('/create', authenticateJWT, async (req, res) => {
+router.post("/create", authenticateJWT, async (req, res) => {
     const { puesto, descripcion, salario, skills } = req.body;
     const fechaCreacion = new Date();
     console.log(req.body);
 
     try {
-        const [result] = await db.query('INSERT INTO EMPLEO (PUESTO, DESCRIPCION, SALARIO, FECHA_CREACION) VALUES (?, ?, ?, ?)', [puesto, descripcion, salario, fechaCreacion]);
+        const [result] = await db.query(
+            "INSERT INTO EMPLEO (PUESTO, DESCRIPCION, SALARIO, FECHA_CREACION) VALUES (?, ?, ?, ?)",
+            [puesto, descripcion, salario, fechaCreacion]
+        );
 
         const jobId = result.insertId;
 
         if (skills && Array.isArray(skills)) {
             const skillInsertPromises = skills.map(async (skill) => {
-                const [existingSkills] = await db.query('SELECT ID FROM HABILIDAD WHERE NOMBRE = ?', [skill]);
-                
+                const [existingSkills] = await db.query(
+                    "SELECT ID FROM HABILIDAD WHERE NOMBRE = ?",
+                    [skill]
+                );
+
                 let skillId;
                 if (existingSkills.length > 0) {
                     skillId = existingSkills[0].ID;
                 } else {
-                    const [newSkillResult] = await db.query('INSERT INTO HABILIDAD (NOMBRE) VALUES (?)', [skill]);
+                    const [newSkillResult] = await db.query(
+                        "INSERT INTO HABILIDAD (NOMBRE) VALUES (?)",
+                        [skill]
+                    );
                     skillId = newSkillResult.insertId;
                 }
 
-                await db.query('INSERT INTO EMPLEO_HABILIDAD (ID_EMPLEO, ID_HABILIDAD) VALUES (?, ?)', [jobId, skillId]);
+                await db.query(
+                    "INSERT INTO EMPLEO_HABILIDAD (ID_EMPLEO, ID_HABILIDAD) VALUES (?, ?)",
+                    [jobId, skillId]
+                );
             });
 
             await Promise.all(skillInsertPromises);
         }
 
-        res.json({ message: 'Job created!' });
+        res.json({ message: "Job created!" });
     } catch (err) {
+        console.error(err);
         res.status(500).json({ err: err.message });
     }
-    console.log('POST /jobs/create');
+    console.log("POST /jobs/create");
 });
 
-router.post('/apply', authenticateJWT, async (req, res) => {
+router.post("/apply", authenticateJWT, async (req, res) => {
     const { userId, jobId } = req.body;
     const fechaAplicacion = new Date();
 
     try {
-        const [existingApplications] = await db.query('SELECT * FROM POSTULACION WHERE ID_USUARIO = ? AND ID_EMPLEO = ?', [userId, jobId]);
+        const [existingApplications] = await db.query(
+            "SELECT * FROM POSTULACION WHERE ID_USUARIO = ? AND ID_EMPLEO = ?",
+            [userId, jobId]
+        );
         if (existingApplications.length > 0) {
-            throw new Error('User already applied to this job');
+            throw new Error("User already applied to this job");
         }
 
-        const query = 'INSERT INTO POSTULACION (ID_USUARIO, ID_EMPLEO, FECHA_POSTULACION) VALUES (?, ?, ?)';
+        const query =
+            "INSERT INTO POSTULACION (ID_USUARIO, ID_EMPLEO, FECHA_POSTULACION) VALUES (?, ?, ?)";
         await db.query(query, [userId, jobId, fechaAplicacion]);
 
-        res.json({ message: 'Applied to job!' });
+        res.json({ message: "Applied to job!" });
     } catch (err) {
         res.status(500).json({ err: err.message });
     }
-    console.log('POST /jobs/apply');
+    console.log("POST /jobs/apply");
 });
 
-router.get('/postulates', authenticateJWT, async (req, res) => {
+router.get("/postulates", authenticateJWT, async (req, res) => {
     const query = `
         SELECT 
             E.PUESTO,
@@ -112,5 +129,64 @@ router.get('/postulates', authenticateJWT, async (req, res) => {
     }
 });
 
+router.get("/my-applications", authenticateJWT, async (req, res) => {
+    console.log("JWT completo:", req.user);
+
+    // En el idToken, el email puede estar en 'email' o 'cognito:username'
+    const userEmail = req.user.email || req.user["cognito:username"];
+
+    console.log("Email extraído:", userEmail);
+
+    if (!userEmail) {
+        return res.status(400).json({
+            error: "Email no encontrado en el token",
+            tokenData: req.user,
+        });
+    }
+
+    try {
+        const [userResult] = await db.query(
+            "SELECT ID FROM USUARIO WHERE CORREO = ?",
+            [userEmail]
+        );
+
+        if (userResult.length === 0) {
+            return res.status(404).json({ error: "Usuario no encontrado" });
+        }
+
+        const userId = userResult[0].ID;
+
+        const query = `
+            SELECT 
+                E.ID AS empleo_id,
+                E.PUESTO,
+                E.DESCRIPCION,
+                E.SALARIO,
+                P.FECHA_POSTULACION,
+                GROUP_CONCAT(H.NOMBRE) AS habilidades
+            FROM 
+                POSTULACION P
+            JOIN 
+                EMPLEO E ON P.ID_EMPLEO = E.ID
+            LEFT JOIN 
+                EMPLEO_HABILIDAD EH ON E.ID = EH.ID_EMPLEO
+            LEFT JOIN 
+                HABILIDAD H ON EH.ID_HABILIDAD = H.ID
+            WHERE 
+                P.ID_USUARIO = ?
+            GROUP BY 
+                E.ID, E.PUESTO, E.DESCRIPCION, E.SALARIO, P.FECHA_POSTULACION
+            ORDER BY 
+                P.FECHA_POSTULACION DESC
+        `;
+
+        const [results] = await db.query(query, [userId]);
+        console.log("Postulaciones encontradas:", results.length);
+        return res.json(results);
+    } catch (err) {
+        console.error("Error:", err);
+        return res.status(500).json({ error: err.message });
+    }
+});
 
 module.exports = router;
