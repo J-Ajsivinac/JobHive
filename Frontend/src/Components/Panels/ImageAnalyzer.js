@@ -291,17 +291,15 @@ const ImageAnalyzer = () => {
 
                 try {
                     // Cargar PDF.js dinámicamente
-                    const pdfjsLib =
-                        window.pdfjsLib ||
-                        (await import(
-                            "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"
-                        ));
+                    // Importar PDF.js correctamente
+                    const pdfjsLib = await import("pdfjs-dist");
+                    const pdfjsWorker = await import(
+                        "pdfjs-dist/build/pdf.worker.entry"
+                    );
 
                     // Configurar worker
-                    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-                        pdfjsLib.GlobalWorkerOptions.workerSrc =
-                            "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
-                    }
+                    pdfjsLib.GlobalWorkerOptions.workerSrc =
+                        pdfjsWorker.default;
 
                     // Convertir blob a arrayBuffer
                     const arrayBuffer = await blob.arrayBuffer();
